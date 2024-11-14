@@ -1,0 +1,33 @@
+Hướng dẫn sử dụng Ứng dụng Quản lý Chi tiêu
+Giới thiệu
+Ứng dụng Quản lý Chi tiêu giúp bạn theo dõi và quản lý các khoản chi tiêu hàng ngày,
+phân tích tài chính cá nhân một cách dễ dàng.
+----------------------------------------------------------
+1. Thêm khoản thu, chi
+Trên màn hình chính, nhấn vào nút "Thu".
+Điền các thông tin:
+ - Danh mục: Chọn loại chi tiêu (ăn uống, đi lại, giải trí, v.v.).
+ - Tên chi tiêu: Thêm tên chi tiêu của bạn.
+ - Số tiền: Số tiền bạn đã chi.
+ - Ngày: Ngày phát sinh chi tiêu.
+ - Ghi chú: Ghi chú thêm nếu cần.
+Phần "Chi" tương tự.
+Nhấn "Thêm" để lưu khoản chi tiêu.
+----------------------------------------------------------
+2. Chỉnh sửa, và tìm kiếm chi tiêu 
+ - Chỉnh sửa: double Click vào ô ghi chú và chọn mục cần sửa. 
+ - Tìm kiếm: chọn danh mục, và tìm tiếm chi tiêu ở ô "Tìm chi tiêu".
+----------------------------------------------------------
+3. Xem Phân tích chi tiêu
+ - Truy cập tab "Phân tích chi tiêu" để xem thống kê chi tiêu theo tuần, tháng (ở ô chọn ngày).
+ - Dùng biểu đồ và số liệu thống kê (Cột và tròn) để hiểu rõ thói quen chi tiêu của bạn và điều
+   chỉnh ngân sách cho phù hợp.
+----------------------------------------------------------
+4. Gợi ý tiết kiệm
+ - Tại tab Gợi ý tiết kiệm sẽ đưa cho bạn những gợi ý và số liệu cụ thể cho từng danh mục
+   của từng tháng mà bạn lựa chọn.
+----------------------------------------------------------
+5. Cài đặt và hỗ trợ
+ - Cài đặt: Bạn có thể thay đổi giao diện tại tab Cài đặt.
+ - Hỗ trợ: Liên hệ với đội ngũ hỗ trợ qua email
+           hoặc sử dụng mục Thông tin trong ứng dụng nếu có bất kỳ câu hỏi nào.

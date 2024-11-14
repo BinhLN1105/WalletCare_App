@@ -1,19 +1,19 @@
 from PySide6.QtCore import Qt,QDate
 from PySide6.QtGui import QScreen,QColor,QIcon
 from PySide6.QtCore import QTimer, QDateTime
-
 from PySide6.QtWidgets import (QApplication, QMainWindow,QStackedWidget,QWidget,QLabel
     ,QDialog,QMessageBox, QTableWidgetItem,QTableWidget,QPushButton,QVBoxLayout,QAbstractItemView)
 
-from UI_themchitieu import Ui_Nhapchitieu_Dialog
-from UI_quanlytaichinh import Ui_MainWindow
-from UI_chinhsua_CT import Ui_chinhsuachitieu_Dialog
-from UI_luachon_Table import Ui_luachon_table
+from UI.UI_themchitieu import Ui_Nhapchitieu_Dialog
+from UI.UI_quanlytaichinh import Ui_MainWindow
+from UI.UI_chinhsua_CT import Ui_chinhsuachitieu_Dialog
+from UI.UI_luachon_Table import Ui_luachon_table
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import numpy as np
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
@@ -32,8 +32,8 @@ class MyProgram (QMainWindow,Ui_MainWindow):
         # Đặt biểu tượng cho ứng dụng
         icon_path = 'icon/iconApp.png'  # Đường dẫn tới file icon
         self.setWindowIcon(QIcon(icon_path))
-
-        # Khởi tạo QTimer
+###############################################################################################################################################
+        #                                       MENU_2
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_real_time)  # Kết nối tín hiệu với hàm cập nhật
         self.timer.start(1000)  # Cập nhật mỗi giây
@@ -41,9 +41,9 @@ class MyProgram (QMainWindow,Ui_MainWindow):
         # Bắt đầu hiển thị thời gian thực
         self.update_real_time()
 
-        # Kết nối nút notepad_btn
+        # Kết nối nút notepad_btn (Hướng dẫn sử dụng)
         self.notepad_btn.clicked.connect(self.open_notepad)
-
+        # (Giới thiệu ứng dụng)
         self.i_button.clicked.connect(self.open_infomation)
 
 ###############################################################################################################################################
@@ -100,36 +100,235 @@ class MyProgram (QMainWindow,Ui_MainWindow):
         self.chitieu_table.cellDoubleClicked.connect(self.on_cell_double_clicked)
 
         # Xử lí sự kiện tìm kiếm
-        self.Chondanhmuc_comboBox.currentIndexChanged.connect(self.search_on_chitieuTable)
-        self.timchitieu_lineEdit.textChanged.connect(self.search_on_chitieuTable)
-
-        self.bieudo_tron_Thu.setLayout(QVBoxLayout())  # Đặt layout cho QFrame
-        self.bieudo_tron_Chi.setLayout(QVBoxLayout())
-        # Kết nối sự kiện clicked của button circle_chart
-        self.circle_chart.setChecked(True)
-
-        self.circle_chart.clicked.connect(self.show_pie_chart)
-
-        self.bieudo_cot_ThuChi.setLayout(QVBoxLayout())
-
-        # Kết nối sự kiện clicked của button chart
-        self.chart.clicked.connect(self.show_bar_chart)
+        self.Chondanhmuc_comboBox.currentIndexChanged.connect(self.search_on_chitieuTable)  #Tìm theo danh mục
+        self.timchitieu_lineEdit.textChanged.connect(self.search_on_chitieuTable)   #Tìm theo trên chi tiêu
 
 #------------------------------------PHÂN TÍCH CHI TIÊU-------------------------------------------------------#
+        # Khởi tạo layout cho biểu đồ tròn Thu và Chi
+        self.bieudo_tron_Thu.setLayout(QVBoxLayout())  
+        self.bieudo_tron_Chi.setLayout(QVBoxLayout())
+
+        # Kết nối sự kiện clicked của button circle_chart
+        self.circle_chart.setChecked(True)  
+        # Kết nối sự kiện hiển thị trang biểu đổ tròn
+        self.circle_chart.clicked.connect(self.show_pie_chart)
         
+        # Khởi tạo layout cho biểu đồ cột Thu và Chi
+        self.bieudo_cot_ThuChi.setLayout(QVBoxLayout())
+
+        # Kết nối sự kiện hiển thị trang biểu đổ cột
+        self.chart.clicked.connect(self.show_bar_chart)
+
         # Xử lí sự kiện lọc giá trị theo ngày/tháng/năm khi ấn submit_day
         self.submit_date.clicked.connect(self.on_submit_day_clicked)
 
-#------------------------------------GỢI Ý TIẾT KIỆM-------------------------------------------------------#
+#------------------------------------GỢI Ý TIẾT KIỆM-----------------------------------------------#
 
         # Xử lí hiển thị tháng/năm trong comboBox chonthangnam_GYTK
         self.goiy_btn.clicked.connect(self.on_goiy_btn_clicked)
 
-#-------------------------------------------------------------------------------------------#
 
 #------------------------------------SETTING-------------------------------------------------------#
+
         self.chose_colorMenu_edit.currentIndexChanged.connect(self.change_color)
 
+#--------------------------------------------------------------------------------------------------#
+###############################################################################################################################################
+#                                                   ----MENU----
+    def switch_QLCT_page(self):
+        self.stackedWidget_page.setCurrentIndex(0)
+        self.stackedWidget_phantichchitieu.setCurrentIndex(0)
+        self.circle_chart.setChecked(True)
+
+    def switch_PTCT_page(self):
+        self.stackedWidget_page.setCurrentIndex(1)
+        self.load_data()  # Tải dữ liệu từ file CSV
+
+    def switch_GYTK_page(self):
+        self.stackedWidget_page.setCurrentIndex(2)
+
+        self.load_data()
+        # Lấy các tháng/năm duy nhất từ cột Thời gian
+        # Xóa các mục cũ trong comboBox
+        self.chonthangnam_GYTK.clear()  
+        
+        # Thêm mục "Tháng/Năm" như một mục không thể chọn
+        self.chonthangnam_GYTK.addItem("Tháng/Năm")
+        # Chỉ cho phép mục này là có thể thấy nhưng không thể chọn
+        self.chonthangnam_GYTK.model().item(0).setFlags(Qt.ItemIsEnabled)
+        
+        unique_month_years = self.df['Thời gian'].apply(lambda x: pd.to_datetime(x, format='%d/%m/%Y').strftime('%m/%Y')).unique()
+        
+        # Thêm các giá trị vào comboBox
+        for month_year in unique_month_years:
+            self.chonthangnam_GYTK.addItem(month_year)
+        
+    def switch_setting_page(self):
+        self.stackedWidget_page.setCurrentIndex(3)
+#                                      CHỨC NĂNG TÌM KIẾM THEO DANH MỤC VÀ TÊN CHI TIÊU
+    def search_on_chitieuTable(self):
+
+        luachon_danhmuc = self.Chondanhmuc_comboBox.currentText() # Lấy giá trị hiện tại của box để tìm kiếm
+        tim_tenchitieu = self.timchitieu_lineEdit.text().lower()  # Lấy giá trị hiện tại của lineEdit để tìm kiếm
+
+        self.chitieu_table.setRowCount(0)   # Xóa tất cả các hàng ở hiện tại
+
+        for index , row in self.df.iterrows():
+            danh_muc = str(row["Danh mục"])
+            ten_chi_tieu = str(row["Tên chi tiêu"]).lower()
+
+            danhmuc_hople = (luachon_danhmuc == "Tất cả" or danh_muc == luachon_danhmuc)
+            tenchitieu_hople = tim_tenchitieu in ten_chi_tieu
+
+            if danhmuc_hople and tenchitieu_hople:
+                row_position = self.chitieu_table.rowCount()
+                self.chitieu_table.insertRow(row_position)
+                self.chitieu_table.setItem(row_position, 0, QTableWidgetItem(str(index + 1)))
+                self.chitieu_table.setItem(row_position, 1, QTableWidgetItem(str(row["Thời gian"])))
+                self.chitieu_table.setItem(row_position, 2, QTableWidgetItem(str(row["Danh mục"])))
+                self.chitieu_table.setItem(row_position, 3, QTableWidgetItem(str(row["Tên chi tiêu"])))
+
+                loai_hinh = row.get("Loại hình", "")
+                so_tien = row.get("Số tiền", "0")
+
+                try:
+                    sotien = str(so_tien)
+                    item = QTableWidgetItem()
+
+                    if loai_hinh == "Thu":
+                        item.setText(f"+{sotien}")
+                        item.setForeground(QColor("#188037"))
+                    elif loai_hinh == "Chi":
+                        item.setText(f"-{sotien}")
+                        item.setForeground(QColor("#CC181F"))
+                    else:
+                        item.setText(sotien)
+
+                    self.chitieu_table.setItem(row_position, 4, item)
+                except (ValueError, OverflowError):
+                    print(f"Lỗi khi chuyển đổi số tiền: {so_tien}. Đặt ô trống.")
+                    self.chitieu_table.setItem(row_position, 4, QTableWidgetItem("0"))
+
+                ghi_chu = row.get("Ghi chú", "")
+                ghi_chu = str(ghi_chu)
+
+                if ghi_chu.isdigit() == False and ghi_chu.endswith('.0'):
+                    ghi_chu = ghi_chu[:-2]
+                elif pd.isna(ghi_chu) or ghi_chu == "nan":
+                    ghi_chu = ""
+
+                self.chitieu_table.setItem(row_position, 5, QTableWidgetItem(ghi_chu))
+
+###############################################################################################################################################
+#                                           SỰ KIỆN Ở TRANG QUẢN LÍ CHI TIÊU
+    def load_data(self):
+        try:
+            self.df = pd.read_csv(self.file_path, sep=";")
+
+            # Kiểm tra tên cột
+            
+            print("Dữ liệu đã được đọc thành công từ file CSV.")
+            
+            self.chitieu_table.setRowCount(0)  # Xóa tất cả các hàng hiện tại
+            for index, row in self.df.iterrows():
+                row_position = self.chitieu_table.rowCount()
+                self.chitieu_table.insertRow(row_position)
+                self.chitieu_table.setItem(row_position, 0, QTableWidgetItem(str(index + 1)))  # STT
+                self.chitieu_table.setItem(row_position, 1, QTableWidgetItem(str(row["Thời gian"])))  # Ngày
+                self.chitieu_table.setItem(row_position, 2, QTableWidgetItem(str(row["Danh mục"])))  # Danh mục
+                self.chitieu_table.setItem(row_position, 3, QTableWidgetItem(str(row["Tên chi tiêu"])))  # Tên chi tiêu
+                
+                loai_hinh = row.get("Loại hình", "")
+                so_tien = row.get("Số tiền", "0")
+                
+                try:
+                    sotien = str(so_tien)
+                    item = QTableWidgetItem()  # Tạo một QTableWidgetItem mới
+
+                    if loai_hinh == "Thu":
+                        item.setText(f"+{sotien}")
+                        item.setForeground(QColor("#188037"))
+                    elif loai_hinh == "Chi":
+                        item.setText(f"-{sotien}")
+                        item.setForeground(QColor("#CC181F"))
+                    else:
+                        item.setText(sotien)
+
+                    self.chitieu_table.setItem(row_position, 4, item)  # Đặt item vào bảng
+                except (ValueError, OverflowError):
+                    print(f"Lỗi khi chuyển đổi số tiền: {so_tien}. Đặt ô trống.")
+                    self.chitieu_table.setItem(row_position, 4, QTableWidgetItem("0"))  # Đặt ô trống hoặc giá trị mặc định
+                
+                 # Xử lý giá trị ghi chú
+                ghi_chu = row.get("Ghi chú", "")
+                ghi_chu = str(ghi_chu)  # Chuyển đổi thành chuỗi
+                
+                # Loại bỏ .0 nếu ghi chú là số thực
+                if ghi_chu.isdigit() == False and ghi_chu.endswith('.0'):
+                    ghi_chu = ghi_chu[:-2]  # Loại bỏ .0
+                elif pd.isna(ghi_chu) or ghi_chu == "nan":  # Kiểm tra NaN
+                    ghi_chu = ""  # Gán chuỗi rỗng
+                
+                # print(f"Ghi chú trước khi thêm vào bảng: '{ghi_chu}'")  # In ra giá trị ghi chú với dấu nháy
+                self.chitieu_table.setItem(row_position, 5, QTableWidgetItem(ghi_chu))  # Ghi chú
+
+        except FileNotFoundError:
+            print("File không tồn tại. Một file mới sẽ được tạo.")
+            self.df = pd.DataFrame(columns=["STT", "Thời gian", "Danh mục", "Tên chi tiêu", "Số tiền", "Ghi chú", "Loại hình"])
+        except Exception as e:
+            print(f"Đã xảy ra lỗi khi đọc file: {e}")
+    
+    def show_themchitieu(self,loai):
+        self.themchitieu_dialog = ChiTieu(self,loai)
+        self.themchitieu_dialog.exec()
+
+    def on_cell_double_clicked(self):
+        # Hiện cửa sổ luachon_Table
+        luachon_dialog = LuachonTable(self)
+        luachon_dialog.exec()
+
+    def update_csv(self):#                    CẬP NHẬT DATA VÀO DATABASE
+        try:
+            # Lấy dữ liệu từ chitieu_table và lưu vào file CSV
+            rows = []
+            for row in range(self.chitieu_table.rowCount()):
+                row_data = []
+                for column in range(self.chitieu_table.columnCount()):
+                    item = self.chitieu_table.item(row, column)
+                    row_data.append(item.text() if item else "")
+                rows.append(row_data)
+
+            # Kiểm tra nếu bảng không trống
+            if not rows:
+                print("Không có dữ liệu để cập nhật.")
+                return
+            
+            # Thêm loại hình vào dữ liệu cho hàng mới
+            for row in rows:
+                # Xử lý số tiền để loại bỏ dấu
+                so_tien = row[4]  # Số tiền
+                if so_tien.startswith("+"):
+                    row[4] = so_tien[1:]  # Loại bỏ dấu "+"
+                    row.append("Thu")  # Thêm loại hình
+                elif so_tien.startswith("-"):
+                    row[4] = so_tien[1:]  # Loại bỏ dấu "-"
+                    row.append("Chi")  # Thêm loại hình
+                else:
+                    row.append(" ")  # Nếu không có dấu, để trống
+
+            # Chuyển đổi danh sách thành DataFrame và thêm cột "Loại hình"
+            df = pd.DataFrame(rows, columns=["STT", "Thời gian", "Danh mục", "Tên chi tiêu", "Số tiền","Ghi chú", "Loại hình"])
+            
+            # Chuyển đổi cột "Số tiền" để loại bỏ dấu
+            df["Số tiền"] = df["Số tiền"].str.replace("+", "").str.replace("-", "").str.strip()  # Loại bỏ dấu và khoảng trắng
+
+            # Lưu vào file CSV
+            df.to_csv(self.file_path, sep=";", index=False)
+            print("Dữ liệu đã được cập nhật vào file CSV.")
+        except Exception as e:
+            print(f"Đã xảy ra lỗi khi cập nhật file CSV: {e}")
+
+###############################################################################################################################################
 
     def set_stylesheet(self, color):
         self.show_colorMenu_edit.setStyleSheet(f"background-color: {color};")
@@ -206,104 +405,18 @@ class MyProgram (QMainWindow,Ui_MainWindow):
             print("File settings.json không tồn tại. Sử dụng màu mặc định.")
             self.chose_colorMenu_edit.setCurrentText("Default")
             self.change_color()  # Đặt màu sắc về mặc định
-#-------------------------------------------------------------------------------------------#
-    def on_cell_double_clicked(self):
-        # Hiện cửa sổ luachon_Table
-        luachon_dialog = LuachonTable(self)
-        luachon_dialog.exec()
 
-
-    def switch_QLCT_page(self):
-        self.stackedWidget_page.setCurrentIndex(0)
-        self.stackedWidget_phantichchitieu.setCurrentIndex(0)
-        self.circle_chart.setChecked(True)
-
-    def switch_PTCT_page(self):
-        self.stackedWidget_page.setCurrentIndex(1)
-        self.load_data()  # Tải dữ liệu từ file CSV
-
-    def switch_GYTK_page(self):
-        self.stackedWidget_page.setCurrentIndex(2)
-
-        self.load_data()
-        # Lấy các tháng/năm duy nhất từ cột Thời gian
-        # Xóa các mục cũ trong comboBox
-        self.chonthangnam_GYTK.clear()  
-        
-        # Thêm mục "Tháng/Năm" như một mục không thể chọn
-        self.chonthangnam_GYTK.addItem("Tháng/Năm")
-        # Chỉ cho phép mục này là có thể thấy nhưng không thể chọn
-        self.chonthangnam_GYTK.model().item(0).setFlags(Qt.ItemIsEnabled)
-        
-        unique_month_years = self.df['Thời gian'].apply(lambda x: pd.to_datetime(x, format='%d/%m/%Y').strftime('%m/%Y')).unique()
-        
-        # Thêm các giá trị vào comboBox
-        for month_year in unique_month_years:
-            self.chonthangnam_GYTK.addItem(month_year)
-        
-    
-    def switch_setting_page(self):
-        self.stackedWidget_page.setCurrentIndex(3)
-
-    #-------------------------------------------------#
-    def show_themchitieu(self,loai):
-        self.themchitieu_dialog = ChiTieu(self,loai)
-        self.themchitieu_dialog.exec()
-    #-------------------------------------------------#
-#
-    def update_real_time(self):
-        # Lấy ngày hiện tại và định dạng thành dd/mm/yyyy
-        current_date = QDate.currentDate().toString("dd/MM/yyyy")
-        self.realTime.setText(f"Today: {current_date}")  # Cập nhật giá trị cho QLineEdit
-
-    def open_notepad(self):
-        # Đường dẫn tới file txt
-        file_path = 'HDSD.txt'  
-        
-        # Nội dung bạn muốn ghi vào file
-        content = "HƯỚNG DẪN SỬ DỤNG TRƯỚC KHI DÙNG."
-
-        # Ghi nội dung vào file (tạo file nếu chưa tồn tại)
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(content)
-
-        # Mở file bằng Notepad
-        # Kiểm tra và mở Notepad
-        try:
-            subprocess.run(['notepad.exe', file_path], check=True)
-        except FileNotFoundError:
-            print("Không tìm thấy Notepad. Kiểm tra cài đặt hệ thống.")
-
-    def open_infomation(self):
-        file_path = 'Information.txt'  
-        content = (
-            "Information\n"
-            "-------------------------\n"
-            "Phiên bản bạn đang dùng\n"
-            "Version 1.0\n"
-            "-------------------------\n"
-            "Liên hệ\n"
-            "Mail: nhom7@gmail.com"
-        )
-                    
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(content)
-        try:
-            subprocess.run(['notepad.exe', file_path], check=True)
-        except FileNotFoundError:
-            print("Không tìm thấy Notepad. Kiểm tra cài đặt hệ thống.")
-    #-------------------------------------------------#
-#                   Kết nối sự kiện page phân tích chi tiêu
+###############################################################################################################################################
+#                                           SỰ KIỆN Ở TRANG PHÂN TÍCH CHI TIÊU
+#                                       Kết nối sự kiện page phân tích chi tiêu
     def show_pie_chart(self):
         # Chuyển đến pie_chart trong stackedWidget_phantichchitieu
         self.stackedWidget_phantichchitieu.setCurrentIndex(0)
     
-
     def show_bar_chart(self):
         # Chuyển đến bar_chart trong stackedWidget_phantichchitieu
         self.stackedWidget_phantichchitieu.setCurrentIndex(1)
         
-
     def on_submit_day_clicked(self):
         # Lấy giá trị từ QDateEdit
         first_date = self.first_date.date().toString("dd/MM/yyyy")
@@ -328,228 +441,7 @@ class MyProgram (QMainWindow,Ui_MainWindow):
         except Exception as e:
             print(f"Không tạo được biểu đồ khi chọn Date: {e}")
 
-    #-------------------------------------------------#
-#                   Kết nối sự kiện page gợi ý chi tiêu
-    def on_goiy_btn_clicked(self):
-        selected_month_years = self.chonthangnam_GYTK.currentText()
-
-        if selected_month_years == "Tháng/Năm":
-            result_message = "Bạn chưa chọn Tháng/Năm"
-        else:
-            # Chuyển đổi giá trị tháng/năm thành định dạng datetime
-            month_years_data = pd.to_datetime("01/" + selected_month_years,format='%d/%m/%Y')
-
-            # Lọc dữ liệu từ DataFrame cho tháng/năm đã chọn
-            filtered_data = self.df[pd.to_datetime(self.df["Thời gian"],format='%d/%m/%Y').dt.to_period('M') == month_years_data.to_period('M')]
-            print(filtered_data)
-            if not filtered_data.empty:
-                thu_summary = filtered_data[filtered_data["Loại hình"] == "Thu"]["Số tiền"].sum()
-                chi_summary = filtered_data[filtered_data["Loại hình"] == "Chi"]["Số tiền"].sum()
-
-                # Kiểm tra nếu có dữ liệu "Chi" để tính toán danh mục lớn nhất
-                chi_data = filtered_data[filtered_data["Loại hình"] == "Chi"]
-                try:
-                    danhmuc_chi_max = chi_data.groupby("Danh mục")["Số tiền"].sum().idxmax()
-                    sotien_danhmuc_chi_max = chi_data.groupby("Danh mục")["Số tiền"].sum().max()
-                except:
-                    danhmuc_chi_max = "Không có danh mục"
-                    sotien_danhmuc_chi_max = 0
-
-                if thu_summary > chi_summary:
-                    chenhlech = thu_summary - chi_summary
-                    phantram = (chenhlech / chi_summary) * 100 if chi_summary > 0 else 100
-
-                    result_message = ("<div style='font-size: 15px;'>"
-                                        f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>rất hợp lí.</span><br>"
-                                        f"Khoảng chênh lệch giữa <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn là <span style='color: #555BFF; font-weight: bold;'>{phantram:.2f}%.</span><br>"
-                                        f"Và bạn đã tiết kiệm được <span style='color: green; font-weight: bold;'>{chenhlech:,.0f} VNĐ.</span><br>"
-                                        "Xin chúc mừng bạn!! Hãy típ tục phát huy vào tháng tới nhé.")
-                elif thu_summary < chi_summary:
-                    chenhlech = chi_summary - thu_summary
-                    phantram = (chenhlech / thu_summary) * 100 if thu_summary > 0 else 100
-
-                    result_message = (f"<div style='font-size: 15px;'>"
-                                        f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>chưa hợp lí cho lắm.</span><br>"
-                                        f"Khoảng chênh lệch giữa <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn là <span style='color: #555BFF; font-weight: bold;'>-{phantram:.2f}%.</span><br>"
-                                        f"Số tiền bị chênh lệch là: <span style='color: red; font-weight: bold;'>{chenhlech:,.0f}</span> VNĐ.</span><br>"
-                                        "<span style='color: black; font-weight: bold;'>Gợi ý dành cho bạn:</span><br>"
-                                        f"  + Hãy giảm bớt chi tiêu cho danh mục <span style='color: black; font-weight: bold;'>{danhmuc_chi_max}.</span><br>"
-                                        f"  + Vì bạn đã chi tiêu <span style='color: black; font-weight: bold;'>{sotien_danhmuc_chi_max:,.0f}</span> VNĐ cho tháng này.</span><br>"    
-                                        "Hãy tiếp tục cố gắng vào tháng tới nhé.")
-                    
-                else:
-                    if chi_summary == 0 and thu_summary == 0:
-                        result_message = (f"<div style='font-size: 15px;'>"
-                                            f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span></span><br>"
-                                            f"Dữ liệu <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn đều bằng 0</span><br>"
-                                            )
-                    else:
-
-                        result_message = (f"<div style='font-size: 15px;'>"
-                                            f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>chưa hợp lí cho lắm.</span><br>"
-                                            "<span style='color: black; font-weight: bold;'>Gợi ý dành cho bạn:</span><br>"
-                                            f"  + Hãy giảm bớt chi tiêu cho danh mục {danhmuc_chi_max}.</span><br>"
-                                            f"  + Vì bạn đã chi tiêu <span style='color: black; font-weight: bold;'>{sotien_danhmuc_chi_max:,.0f}</span> VNĐ cho tháng này.</span><br>"    
-                                            "Hãy tiếp tục cố gắng vào tháng tới nhé.")
-            else:
-                result_message = (f"<div style='font-size: 15px;color: black; font-weight: bold;'>""Không có dữ liệu để phân tích.")
-        self.goiy_show.setText(result_message)
-    #-------------------------------------------------#
-    def load_data(self):
-        try:
-            self.df = pd.read_csv(self.file_path, sep=";")
-
-            # Kiểm tra tên cột
-            
-            print("Dữ liệu đã được đọc thành công từ file CSV.")
-            
-            self.chitieu_table.setRowCount(0)  # Xóa tất cả các hàng hiện tại
-            for index, row in self.df.iterrows():
-                row_position = self.chitieu_table.rowCount()
-                self.chitieu_table.insertRow(row_position)
-                self.chitieu_table.setItem(row_position, 0, QTableWidgetItem(str(index + 1)))  # STT
-                self.chitieu_table.setItem(row_position, 1, QTableWidgetItem(str(row["Thời gian"])))  # Ngày
-                self.chitieu_table.setItem(row_position, 2, QTableWidgetItem(str(row["Danh mục"])))  # Danh mục
-                self.chitieu_table.setItem(row_position, 3, QTableWidgetItem(str(row["Tên chi tiêu"])))  # Tên chi tiêu
-                
-                loai_hinh = row.get("Loại hình", "")
-                so_tien = row.get("Số tiền", "0")
-                
-                try:
-                    sotien = str(so_tien)
-                    item = QTableWidgetItem()  # Tạo một QTableWidgetItem mới
-
-                    if loai_hinh == "Thu":
-                        item.setText(f"+{sotien}")
-                        item.setForeground(QColor("#188037"))
-                    elif loai_hinh == "Chi":
-                        item.setText(f"-{sotien}")
-                        item.setForeground(QColor("#CC181F"))
-                    else:
-                        item.setText(sotien)
-
-                    self.chitieu_table.setItem(row_position, 4, item)  # Đặt item vào bảng
-                except (ValueError, OverflowError):
-                    print(f"Lỗi khi chuyển đổi số tiền: {so_tien}. Đặt ô trống.")
-                    self.chitieu_table.setItem(row_position, 4, QTableWidgetItem("0"))  # Đặt ô trống hoặc giá trị mặc định
-                
-                 # Xử lý giá trị ghi chú
-                ghi_chu = row.get("Ghi chú", "")
-                ghi_chu = str(ghi_chu)  # Chuyển đổi thành chuỗi
-                
-                # Loại bỏ .0 nếu ghi chú là số thực
-                if ghi_chu.isdigit() == False and ghi_chu.endswith('.0'):
-                    ghi_chu = ghi_chu[:-2]  # Loại bỏ .0
-                elif pd.isna(ghi_chu) or ghi_chu == "nan":  # Kiểm tra NaN
-                    ghi_chu = ""  # Gán chuỗi rỗng
-                
-                # print(f"Ghi chú trước khi thêm vào bảng: '{ghi_chu}'")  # In ra giá trị ghi chú với dấu nháy
-                self.chitieu_table.setItem(row_position, 5, QTableWidgetItem(ghi_chu))  # Ghi chú
-
-        except FileNotFoundError:
-            print("File không tồn tại. Một file mới sẽ được tạo.")
-            self.df = pd.DataFrame(columns=["STT", "Thời gian", "Danh mục", "Tên chi tiêu", "Số tiền", "Ghi chú", "Loại hình"])
-        except Exception as e:
-            print(f"Đã xảy ra lỗi khi đọc file: {e}")
-
-###############################################################################################################################################
-    def update_csv(self):#                          CẬP NHẬT DATA VÀO DATABASE
-        try:
-            # Lấy dữ liệu từ chitieu_table và lưu vào file CSV
-            rows = []
-            for row in range(self.chitieu_table.rowCount()):
-                row_data = []
-                for column in range(self.chitieu_table.columnCount()):
-                    item = self.chitieu_table.item(row, column)
-                    row_data.append(item.text() if item else "")
-                rows.append(row_data)
-
-            # Kiểm tra nếu bảng không trống
-            if not rows:
-                print("Không có dữ liệu để cập nhật.")
-                return
-            
-            # Thêm loại hình vào dữ liệu cho hàng mới
-            for row in rows:
-                # Xử lý số tiền để loại bỏ dấu
-                so_tien = row[4]  # Số tiền
-                if so_tien.startswith("+"):
-                    row[4] = so_tien[1:]  # Loại bỏ dấu "+"
-                    row.append("Thu")  # Thêm loại hình
-                elif so_tien.startswith("-"):
-                    row[4] = so_tien[1:]  # Loại bỏ dấu "-"
-                    row.append("Chi")  # Thêm loại hình
-                else:
-                    row.append(" ")  # Nếu không có dấu, để trống
-
-            # Chuyển đổi danh sách thành DataFrame và thêm cột "Loại hình"
-            df = pd.DataFrame(rows, columns=["STT", "Thời gian", "Danh mục", "Tên chi tiêu", "Số tiền","Ghi chú", "Loại hình"])
-            
-            # Chuyển đổi cột "Số tiền" để loại bỏ dấu
-            df["Số tiền"] = df["Số tiền"].str.replace("+", "").str.replace("-", "").str.strip()  # Loại bỏ dấu và khoảng trắng
-
-            # Lưu vào file CSV
-            df.to_csv(self.file_path, sep=";", index=False)
-            print("Dữ liệu đã được cập nhật vào file CSV.")
-        except Exception as e:
-            print(f"Đã xảy ra lỗi khi cập nhật file CSV: {e}")
-###############################################################################################################################################
-#                                      CHỨC NĂNG TÌM KIẾM THEO DANH MỤC VÀ TÊN CHI TIÊU
-    def search_on_chitieuTable(self):
-
-        luachon_danhmuc = self.Chondanhmuc_comboBox.currentText() # Lấy giá trị hiện tại của box để tìm kiếm
-        tim_tenchitieu = self.timchitieu_lineEdit.text().lower()  # Lấy giá trị hiện tại của lineEdit để tìm kiếm
-
-        self.chitieu_table.setRowCount(0)   # Xóa tất cả các hàng ở hiện tại
-
-        for index , row in self.df.iterrows():
-            danh_muc = str(row["Danh mục"])
-            ten_chi_tieu = str(row["Tên chi tiêu"]).lower()
-
-            danhmuc_hople = (luachon_danhmuc == "Tất cả" or danh_muc == luachon_danhmuc)
-            tenchitieu_hople = tim_tenchitieu in ten_chi_tieu
-
-            if danhmuc_hople and tenchitieu_hople:
-                row_position = self.chitieu_table.rowCount()
-                self.chitieu_table.insertRow(row_position)
-                self.chitieu_table.setItem(row_position, 0, QTableWidgetItem(str(index + 1)))
-                self.chitieu_table.setItem(row_position, 1, QTableWidgetItem(str(row["Thời gian"])))
-                self.chitieu_table.setItem(row_position, 2, QTableWidgetItem(str(row["Danh mục"])))
-                self.chitieu_table.setItem(row_position, 3, QTableWidgetItem(str(row["Tên chi tiêu"])))
-
-                loai_hinh = row.get("Loại hình", "")
-                so_tien = row.get("Số tiền", "0")
-
-                try:
-                    sotien = str(so_tien)
-                    item = QTableWidgetItem()
-
-                    if loai_hinh == "Thu":
-                        item.setText(f"+{sotien}")
-                        item.setForeground(QColor("#188037"))
-                    elif loai_hinh == "Chi":
-                        item.setText(f"-{sotien}")
-                        item.setForeground(QColor("#CC181F"))
-                    else:
-                        item.setText(sotien)
-
-                    self.chitieu_table.setItem(row_position, 4, item)
-                except (ValueError, OverflowError):
-                    print(f"Lỗi khi chuyển đổi số tiền: {so_tien}. Đặt ô trống.")
-                    self.chitieu_table.setItem(row_position, 4, QTableWidgetItem("0"))
-
-                ghi_chu = row.get("Ghi chú", "")
-                ghi_chu = str(ghi_chu)
-
-                if ghi_chu.isdigit() == False and ghi_chu.endswith('.0'):
-                    ghi_chu = ghi_chu[:-2]
-                elif pd.isna(ghi_chu) or ghi_chu == "nan":
-                    ghi_chu = ""
-
-                self.chitieu_table.setItem(row_position, 5, QTableWidgetItem(ghi_chu))
-
-###############################################################################################################################################
-#                                               BIỂU ĐỒ TRÒN
+#----------------------------------------------------BIỂU ĐỒ TRÒN------------------------------------------------------------#                                               
 #   BIỂU ĐỒ TRÒN THU
     def draw_pie_charts_1(self):
     
@@ -635,11 +527,8 @@ class MyProgram (QMainWindow,Ui_MainWindow):
 
         # Vẽ lại canvas
         canvas.draw()
+#--------------------------------------------------BIỂU ĐỒ CỘT + ĐƯỜNG------------------------------------------------------------#
 
-###############################################################################################################################################
-
-###############################################################################################################################################
-#                                               BIỂU ĐỒ CỘT + ĐƯỜNG
     def draw_bar_chart(self):
 
         thu_data = self.filtered_df[self.filtered_df["Loại hình"] == "Thu"]
@@ -752,8 +641,153 @@ class MyProgram (QMainWindow,Ui_MainWindow):
         plt.tight_layout()
         self.canvas.draw()  # Vẽ lại canvas
 
+###############################################################################################################################################
+#                                           SỰ KIỆN Ở PAGE GỢI Ý CHI TIÊU
+
+    def on_goiy_btn_clicked(self):
+        selected_month_years = self.chonthangnam_GYTK.currentText()
+
+        if selected_month_years == "Tháng/Năm":
+            result_message = "Bạn chưa chọn Tháng/Năm"
+        else:
+            # Chuyển đổi giá trị tháng/năm thành định dạng datetime
+            month_years_data = pd.to_datetime("01/" + selected_month_years,format='%d/%m/%Y')
+
+            # Lọc dữ liệu từ DataFrame cho tháng/năm đã chọn
+            filtered_data = self.df[pd.to_datetime(self.df["Thời gian"],format='%d/%m/%Y').dt.to_period('M') == month_years_data.to_period('M')]
+            print(filtered_data)
+            if not filtered_data.empty:
+                thu_summary = filtered_data[filtered_data["Loại hình"] == "Thu"]["Số tiền"].sum()
+                chi_summary = filtered_data[filtered_data["Loại hình"] == "Chi"]["Số tiền"].sum()
+
+                # Kiểm tra nếu có dữ liệu "Chi" để tính toán danh mục lớn nhất
+                chi_data = filtered_data[filtered_data["Loại hình"] == "Chi"]
+                try:
+                    danhmuc_chi_max = chi_data.groupby("Danh mục")["Số tiền"].sum().idxmax()
+                    sotien_danhmuc_chi_max = chi_data.groupby("Danh mục")["Số tiền"].sum().max()
+                except:
+                    danhmuc_chi_max = "Không có danh mục"
+                    sotien_danhmuc_chi_max = 0
+
+                if thu_summary > chi_summary:
+                    chenhlech = thu_summary - chi_summary
+                    phantram = (chenhlech / chi_summary) * 100 if chi_summary > 0 else 100
+
+                    result_message = ("<div style='font-size: 15px;'>"
+                                        f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>rất hợp lí.</span><br>"
+                                        f"Khoảng chênh lệch giữa <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn là <span style='color: #555BFF; font-weight: bold;'>{phantram:.2f}%.</span><br>"
+                                        f"Và bạn đã tiết kiệm được <span style='color: green; font-weight: bold;'>{chenhlech:,.0f} VNĐ.</span><br>"
+                                        "Xin chúc mừng bạn!! Hãy típ tục phát huy vào tháng tới nhé.")
+                elif thu_summary < chi_summary:
+                    chenhlech = chi_summary - thu_summary
+                    phantram = (chenhlech / thu_summary) * 100 if thu_summary > 0 else 100
+
+                    result_message = (f"<div style='font-size: 15px;'>"
+                                        f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>chưa hợp lí cho lắm.</span><br>"
+                                        f"Khoảng chênh lệch giữa <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn là <span style='color: #555BFF; font-weight: bold;'>-{phantram:.2f}%.</span><br>"
+                                        f"Số tiền bị chênh lệch là: <span style='color: red; font-weight: bold;'>{chenhlech:,.0f}</span> VNĐ.</span><br>"
+                                        "<span style='color: black; font-weight: bold;'>Gợi ý dành cho bạn:</span><br>"
+                                        f"  + Hãy giảm bớt chi tiêu cho danh mục <span style='color: black; font-weight: bold;'>{danhmuc_chi_max}.</span><br>"
+                                        f"  + Vì bạn đã chi tiêu <span style='color: black; font-weight: bold;'>{sotien_danhmuc_chi_max:,.0f}</span> VNĐ cho tháng này.</span><br>"    
+                                        "Hãy tiếp tục cố gắng vào tháng tới nhé.")
+                    
+                else:
+                    if chi_summary == 0 and thu_summary == 0:
+                        result_message = (f"<div style='font-size: 15px;'>"
+                                            f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span></span><br>"
+                                            f"Dữ liệu <span style='color: green; font-weight: bold;'>Thu</span> và <span style='color: red; font-weight: bold;'>Chi</span> của bạn đều bằng 0</span><br>"
+                                            )
+                    else:
+
+                        result_message = (f"<div style='font-size: 15px;'>"
+                                            f"Trong tháng <span style='color: #13FF00; font-weight: bold;'>{selected_month_years}</span> Bạn đã chi tiêu <span style='color: black; font-weight: bold;'>chưa hợp lí cho lắm.</span><br>"
+                                            "<span style='color: black; font-weight: bold;'>Gợi ý dành cho bạn:</span><br>"
+                                            f"  + Hãy giảm bớt chi tiêu cho danh mục {danhmuc_chi_max}.</span><br>"
+                                            f"  + Vì bạn đã chi tiêu <span style='color: black; font-weight: bold;'>{sotien_danhmuc_chi_max:,.0f}</span> VNĐ cho tháng này.</span><br>"    
+                                            "Hãy tiếp tục cố gắng vào tháng tới nhé.")
+            else:
+                result_message = (f"<div style='font-size: 15px;color: black; font-weight: bold;'>""Không có dữ liệu để phân tích.")
+        self.goiy_show.setText(result_message)
 
 ###############################################################################################################################################
+#                                                   -----MENU 2-----
+
+    def update_real_time(self):
+        # Lấy ngày hiện tại và định dạng thành dd/mm/yyyy
+        current_date = QDate.currentDate().toString("dd/MM/yyyy")
+        self.realTime.setText(f"Today: {current_date}")  # Cập nhật giá trị cho QLineEdit
+
+    def open_notepad(self):
+        # Đường dẫn tới file txt
+        file_path = 'text/HDSD.txt'  
+        
+        # Nội dung bạn muốn ghi vào file
+        content = """Hướng dẫn sử dụng Ứng dụng Quản lý Chi tiêu
+Giới thiệu
+Ứng dụng Quản lý Chi tiêu giúp bạn theo dõi và quản lý các khoản chi tiêu hàng ngày,
+phân tích tài chính cá nhân một cách dễ dàng.
+----------------------------------------------------------
+1. Thêm khoản thu, chi
+Trên màn hình chính, nhấn vào nút "Thu".
+Điền các thông tin:
+ - Danh mục: Chọn loại chi tiêu (ăn uống, đi lại, giải trí, v.v.).
+ - Tên chi tiêu: Thêm tên chi tiêu của bạn.
+ - Số tiền: Số tiền bạn đã chi.
+ - Ngày: Ngày phát sinh chi tiêu.
+ - Ghi chú: Ghi chú thêm nếu cần.
+Phần "Chi" tương tự.
+Nhấn "Thêm" để lưu khoản chi tiêu.
+----------------------------------------------------------
+2. Chỉnh sửa, và tìm kiếm chi tiêu 
+ - Chỉnh sửa: double Click vào ô ghi chú và chọn mục cần sửa. 
+ - Tìm kiếm: chọn danh mục, và tìm tiếm chi tiêu ở ô "Tìm chi tiêu".
+----------------------------------------------------------
+3. Xem Phân tích chi tiêu
+ - Truy cập tab "Phân tích chi tiêu" để xem thống kê chi tiêu theo tuần, tháng (ở ô chọn ngày).
+ - Dùng biểu đồ và số liệu thống kê (Cột và tròn) để hiểu rõ thói quen chi tiêu của bạn và điều
+   chỉnh ngân sách cho phù hợp.
+----------------------------------------------------------
+4. Gợi ý tiết kiệm
+ - Tại tab Gợi ý tiết kiệm sẽ đưa cho bạn những gợi ý và số liệu cụ thể cho từng danh mục
+   của từng tháng mà bạn lựa chọn.
+----------------------------------------------------------
+5. Cài đặt và hỗ trợ
+ - Cài đặt: Bạn có thể thay đổi giao diện tại tab Cài đặt.
+ - Hỗ trợ: Liên hệ với đội ngũ hỗ trợ qua email
+           hoặc sử dụng mục Thông tin trong ứng dụng nếu có bất kỳ câu hỏi nào."""
+
+        # Ghi nội dung vào file (tạo file nếu chưa tồn tại)
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(content)
+
+        # Mở file bằng Notepad
+        # Kiểm tra và mở Notepad
+        try:
+            subprocess.run(['notepad.exe', file_path], check=True)
+        except FileNotFoundError:
+            print("Không tìm thấy Notepad. Kiểm tra cài đặt hệ thống.")
+
+    def open_infomation(self):
+        file_path = 'text/Information.txt'  
+        content = (
+            "Information\n"
+            "-------------------------\n"
+            "Phiên bản bạn đang dùng\n"
+            "Version 1.0\n"
+            "-------------------------\n"
+            "Liên hệ\n"
+            "Mail: nhom7@gmail.com"
+        )
+                    
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(content)
+        try:
+            subprocess.run(['notepad.exe', file_path], check=True)
+        except FileNotFoundError:
+            print("Không tìm thấy Notepad. Kiểm tra cài đặt hệ thống.")
+
+###############################################################################################################################################
+
 class ChiTieu (QDialog,Ui_Nhapchitieu_Dialog):
     def __init__(self, main_app,loai):
         super().__init__()
@@ -847,6 +881,7 @@ class ChiTieu (QDialog,Ui_Nhapchitieu_Dialog):
             # self.close()  # Đóng cửa sổ thêm chi tiêu
 
 ###############################################################################################################################################
+
 class LuachonTable(QDialog, Ui_luachon_table):
     def __init__(self, main_app):
         super().__init__()
@@ -891,6 +926,8 @@ class LuachonTable(QDialog, Ui_luachon_table):
     
     def close_Dialog(self):
         self.close()
+
+###############################################################################################################################################
 
 class ChinhsuaCT(QDialog, Ui_chinhsuachitieu_Dialog):
     def __init__(self, main_app):
@@ -963,13 +1000,13 @@ class ChinhsuaCT(QDialog, Ui_chinhsuachitieu_Dialog):
         else:
             QMessageBox.warning(self, "Cảnh báo", "Vui lòng chọn một hàng để chỉnh sửa.")
     
-
+###############################################################################################################################################
+#                                               -----MAIN-----
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_app = MyProgram()  # Khởi tạo ct
     # main_app.setWindowFlags(Qt.FramelessWindowHint)  # Thiết lập thuộc tính cửa sổ (nếu cần)
     # main_app.setAttribute(Qt.WA_TranslucentBackground)  # Thiết lập nền trong suốt (nếu cần)
-
     main_app.show()  # Hiển thị ứng dụng
 
     app.exec()
